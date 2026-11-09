@@ -1,0 +1,7 @@
+{
+  "name": "job-tracker-gmail",
+  "version": "1.0.0",
+  "description": "Auto-track job applications from Gmail into a Google Sheet (Apps Script) or with Claude.",
+  "scripts": { "test": "cp apps-script/Code.gs test/code.js && node test/classifier.test.js" },
+  "license": "MIT"
+}
