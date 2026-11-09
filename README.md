@@ -30,7 +30,11 @@ flowchart LR
 - You get an email when a new OA, interview or offer shows up.
 - Edit freely: the script keeps your Notes and only updates a row when a newer email changes its status.
 
-## Setup (5 minutes) · 安装步骤
+## No Claude? Google Sheet version
+
+A lighter version for anyone. It is rule-based and the data lives in your own Google Sheet.
+
+### Setup (5 minutes) · 安装步骤
 
 1. Create a new [Google Sheet](https://sheets.new).
 2. **Extensions → Apps Script**. Delete the sample code, then paste in [`apps-script/Code.gs`](apps-script/Code.gs).
@@ -59,9 +63,23 @@ Edit `CONFIG` at the top of `Code.gs`:
 | `SEND_DIGEST` | true | email yourself on OA / interview / offer |
 | `NOISE_SENDERS` | alerts list | add senders to ignore |
 
-## Using Claude instead (no code)
+## ⭐ Using Claude (recommended): the full dashboard
 
-If you use Claude with a Gmail connector, [`claude-skill/gmail-job-tracker/SKILL.md`](claude-skill/gmail-job-tracker/SKILL.md) describes the same workflow as a skill. Claude reads every email in full before classifying it, so it handles edge cases that rules miss. Add the skill, then ask *"update my job tracker"*, or set it up as a daily scheduled task.
+If you use Claude with Gmail connected, the skill in [`claude-skill/gmail-job-tracker/`](claude-skill/gmail-job-tracker/) builds the **full live dashboard**:
+
+- KPI cards, a pipeline bar, a weekly chart and status chips
+- Excel-style header filters, stars, and inline editing
+- A JD-link column, plus **paste a JD → row auto-filled**
+- A **↻ Update from Gmail** button and a daily auto-update, with push alerts for OAs and interviews
+- Claude reads every email in full before deciding a status, so it is more accurate than keyword rules
+
+**Install (2 minutes) · 安装**
+1. Download [`gmail-job-tracker-skill.zip`](gmail-job-tracker-skill.zip).
+2. In Claude, go to **Settings → Capabilities → Skills → Upload skill** and upload the zip.
+3. Connect Gmail: **Settings → Connectors → Gmail**.
+4. Ask Claude: **"Build my job tracker from my Gmail"** / 「用我的 Gmail 做一个求职 tracker」.
+
+> 用 Claude 的朋友推荐用这个：和作者自用的版本一模一样，数据只在你自己的 Claude 账号里。
 
 ## Privacy · 隐私
 

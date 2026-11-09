@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Application Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --ink:#1b1b1f; --ink2:#5d5d66; --ink3:#9a9aa3; --line:#e7e6e1; --line2:#f0efea;
+  --accent:#2d4bff; --accent-soft:#eef1ff;
+  --s-applied:#6b7280; --s-applied-bg:#f1f2f4;
+  --s-progress:#b45309; --s-progress-bg:#fff4e0;
+  --s-interview:#0f7b4f; --s-interview-bg:#e3f6ec;
+  --s-offer:#6d28d9; --s-offer-bg:#f1eaff;
+  --s-rejected:#b42318; --s-rejected-bg:#fdeceb;
+  --s-closed:#7a7a80; --s-closed-bg:#efefef;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1440px;margin:0 auto;padding:28px 28px 60px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0}
+.sub{color:var(--ink2);font-size:13px;margin-top:4px}
+.sync{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ink3)}
+.dot.ok{background:#16a34a}.dot.warn{background:#d97706}.dot.err{background:#dc2626}
+
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.kpi .l{font-size:12px;color:var(--ink2);font-weight:500}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .h{font-size:12px;color:var(--ink3)}
+
+.viz{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.card h3{margin:0 0 10px;font-size:13px;font-weight:600}
+.pipe{display:flex;height:28px;border-radius:6px;overflow:hidden;background:var(--line2)}
+.pipe span{display:block;height:100%;cursor:pointer;transition:opacity .15s}
+.pipe span:hover{opacity:.8}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.legend b{color:var(--ink);font-weight:600;margin-left:3px}
+.weeks{display:flex;align-items:flex-end;gap:4px;height:70px}
+.weeks .b{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;position:relative}
+.weeks .b:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--ink);color:#fff;font-size:11px;padding:3px 6px;border-radius:4px;margin-bottom:4px;z-index:5}
+.wl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:6px}
+
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.search{flex:1;min-width:200px;position:relative}
+.search input{width:100%;padding:9px 12px 9px 32px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font:inherit}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink3)}
+select.f,button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px;color:var(--ink);cursor:pointer}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+button:hover{border-color:#cfcdc6}
+button.primary:hover{background:#000}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);cursor:pointer;color:var(--ink2);user-select:none}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip .n{opacity:.6;margin-left:4px;font-variant-numeric:tabular-nums}
+
+.tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:auto;max-height:calc(100vh - 120px)}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:1180px}
+thead th{position:sticky;top:0;background:#fbfbf9;z-index:2;text-align:left;font-size:11.5px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;padding:10px 10px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+thead th.sorted{color:var(--ink)}
+thead th .ar{opacity:.5;margin-left:3px}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+tbody tr:hover td{background:#fcfcfa}
+tbody tr.rej td{color:var(--ink3)}
+tbody tr.rej td.co{text-decoration:none}
+td.co{font-weight:600;white-space:nowrap}
+td.role{min-width:240px}
+td.mono,td.date{font-family:"JetBrains Mono",monospace;font-size:12px;white-space:nowrap;color:var(--ink2)}
+.ed{outline:none;border-radius:5px;padding:2px 4px;margin:-2px -4px;min-height:20px;display:block}
+.ed:hover{background:#f3f3ef}
+.ed:focus{background:#fff;box-shadow:0 0 0 2px var(--accent)}
+.ed:empty::before{content:attr(data-ph);color:var(--ink3)}
+.pill{appearance:none;-webkit-appearance:none;border:0;font:inherit;font-size:12px;font-weight:600;padding:3px 22px 3px 9px;border-radius:999px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.mini{appearance:none;-webkit-appearance:none;border:1px solid transparent;font:inherit;font-size:12px;background:transparent;color:var(--ink2);padding:2px 4px;border-radius:5px;cursor:pointer}
+.mini:hover{border-color:var(--line)}
+input.dt{border:1px solid transparent;background:transparent;font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink2);padding:2px 3px;border-radius:5px;width:122px}
+input.dt:hover{border-color:var(--line)}
+.star{cursor:pointer;color:#d4d3cc;font-size:15px;line-height:1;border:0;background:none;padding:0}
+.star.on{color:#f5a524}
+.del{border:0;background:none;color:var(--ink3);cursor:pointer;padding:2px 4px;font-size:13px;border-radius:5px}
+.del:hover{color:#b42318;background:#fdeceb}
+.del.confirm{color:#fff;background:#b42318;font-size:11px;font-weight:600}
+.age{font-size:11px;color:var(--ink3)}
+.age.stale{color:#b45309;font-weight:600}
+.mail{color:var(--ink3);text-decoration:none;font-size:12px}
+.mail:hover{color:var(--accent)}
+.empty{padding:40px;text-align:center;color:var(--ink2)}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--ink3);font-size:12px;margin-top:10px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:9px 14px;border-radius:8px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.banner{background:#fff7e6;border:1px solid #f5d9a3;color:#7a4b00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;display:none}
+thead th .th-l{cursor:pointer}
+td.co .ed{display:inline-block;margin-right:2px}
+td.jdc{white-space:nowrap;min-width:110px}
+.jdl{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;padding:2px 7px;border-radius:6px;background:var(--accent-soft)}
+.jdl.find{color:var(--ink2);background:#f1f1ec;font-weight:500}
+.jdl:hover{filter:brightness(.95)}
+.jdv{font-size:11px;color:var(--ink3);max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px!important}
+.jdv:focus{white-space:normal;max-width:none;overflow:visible;word-break:break-all}
+.fbtn{border:0;background:none;padding:1px 4px;margin-left:4px;border-radius:4px;color:var(--ink3);font-size:10px;cursor:pointer;vertical-align:1px}
+.fbtn:hover{background:#ecebe6;color:var(--ink)}
+.fbtn.on{background:var(--accent);color:#fff}
+.pop{position:fixed;z-index:40;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.12);width:260px;padding:10px;display:none;text-transform:none;letter-spacing:0}
+.pop input.ps{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:13px;margin-bottom:8px}
+.pop .pa{display:flex;gap:6px;margin-bottom:6px}
+.pop .pa button{flex:1;padding:5px;font-size:12px}
+.pop .pl{max-height:260px;overflow:auto;margin:0 -4px}
+.pop label{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:13px;color:var(--ink);cursor:pointer;font-weight:400}
+.pop label:hover{background:#f5f5f1}
+.pop label .c{margin-left:auto;color:var(--ink3);font-size:12px;font-variant-numeric:tabular-nums}
+.pop .ps-sort{display:flex;gap:6px;margin-bottom:8px}
+.pop .ps-sort button{flex:1;padding:5px;font-size:12px}
+th.c-star,td.c-star{position:sticky;left:0;z-index:1;background:var(--panel);width:38px;min-width:38px}
+th.c-co,td.co{position:sticky;left:38px;z-index:1;background:var(--panel);box-shadow:1px 0 0 var(--line2)}
+thead th.c-star,thead th.c-co{z-index:3;background:#fbfbf9}
+tbody tr:hover td.c-star,tbody tr:hover td.co{background:#fcfcfa}
+.syncbtn{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.syncbtn:hover{filter:brightness(1.08);border-color:var(--accent)}
+.syncbtn:disabled{opacity:.7;cursor:default}
+.addpanel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.addpanel.open{display:block}
+.ap-h{font-size:13px;color:var(--ink2);margin-bottom:8px}
+.addpanel textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:13px;resize:vertical}
+.addpanel textarea:focus{outline:none;box-shadow:0 0 0 2px var(--accent)}
+.ap-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.ap-msg{font-size:12px;color:var(--ink2)}
+tr.flash td{animation:flash 2.4s ease}
+@keyframes flash{0%,40%{background:#eef1ff}100%{background:transparent}}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.viz{grid-template-columns:1fr}.wrap{padding:18px 14px 40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Job Application Tracker</h1>
+      <div class="sub">__SUBTITLE__ — built from your Gmail confirmations &amp; replies. Every cell is editable.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div style="display:flex;gap:10px;align-items:center"><div class="sync"><span class="dot" id="dot"></span><span id="syncTxt">Connecting…</span></div>
+      <button id="btnSync" class="syncbtn" title="Ask Claude to re-scan your Gmail now">↻ Update from Gmail</button></div>
+      <div class="sync" id="lastSync"></div>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="kpis">
+    <div class="kpi"><div class="l">Applications</div><div class="v" id="kTotal">–</div><div class="h" id="kTotalH"></div></div>
+    <div class="kpi"><div class="l">Awaiting reply</div><div class="v" id="kOpen">–</div><div class="h">status = Applied</div></div>
+    <div class="kpi"><div class="l">In process</div><div class="v" id="kProc" style="color:var(--s-interview)">–</div><div class="h">OA · interview · next step</div></div>
+    <div class="kpi"><div class="l">Rejected / closed</div><div class="v" id="kRej">–</div><div class="h" id="kRejH"></div></div>
+    <div class="kpi"><div class="l">Response rate</div><div class="v" id="kResp">–</div><div class="h">any reply ÷ applications</div></div>
+  </section>
+
+  <section class="viz">
+    <div class="card"><h3>Pipeline by status <span style="color:var(--ink3);font-weight:400">· click a segment to filter</span></h3><div class="pipe" id="pipe"></div><div class="legend" id="legend"></div></div>
+    <div class="card"><h3>Applications per week</h3><div class="weeks" id="weeks"></div><div class="wl" id="wl"></div></div>
+  </section>
+
+  <div class="toolbar">
+    <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" placeholder="Search company, role, notes…"></div>
+    <select class="f" id="fType"><option value="">All types</option><option>Internship</option><option>Full-time</option><option>Program</option></select>
+    <select class="f" id="fTrack"><option value="">All tracks</option></select>
+    <label style="font-size:13px;color:var(--ink2);display:flex;gap:5px;align-items:center;cursor:pointer"><input type="checkbox" id="fStar"> Starred</label>
+    <label style="font-size:13px;color:var(--ink2);display:flex;gap:5px;align-items:center;cursor:pointer"><input type="checkbox" id="fHideRej"> Hide rejected</label>
+    <button id="btnCsv">Copy CSV</button>
+    <button class="primary" id="btnAdd">+ Add application</button>
+  </div>
+  <div class="addpanel" id="addPanel">
+    <div class="ap-h">Paste a job description — Claude fills company, role, type, track, link and key requirements.</div>
+    <textarea id="jdText" placeholder="Paste the full JD text here (a link alone works too, but the text gives much better results)…"></textarea>
+    <div class="ap-row">
+      <button class="primary" id="btnFill">✨ Auto-fill from JD</button>
+      <button id="btnBlank">Add blank row</button>
+      <button id="btnCancel">Cancel</button>
+      <span class="ap-msg" id="fillMsg"></span>
+    </div>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none"></div>
+  </div>
+  <div class="foot"><span id="countTxt"></span><span>Statuses from email text only — anything marked “(role not in email)” is worth filling in. Changes save automatically.</span></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STATUSES=[
+ {k:"Applied",c:"applied"},{k:"Invited to apply",c:"progress"},{k:"Online assessment",c:"progress"},{k:"Next step",c:"progress"},
+ {k:"Interview",c:"interview"},{k:"Final round",c:"interview"},{k:"Offer",c:"offer"},{k:"Rejected",c:"rejected"},{k:"Closed",c:"closed"},{k:"Withdrawn",c:"closed"}];
+const SCOLOR=Object.fromEntries(STATUSES.map(s=>[s.k,s.c]));
+const PROC=new Set(["Invited to apply","Online assessment","Next step","Interview","Final round","Offer"]);
+const DEAD=new Set(["Rejected","Closed","Withdrawn"]);
+const TRACKS=["PM/TPM","Strategy/Ops","Data/BA","FDE/Solutions","Design/Marketing","Engineering","Other"];
+const TYPES=["Internship","Full-time","Program"];
+const COLS=[
+ {k:"starred",t:"★",cls:"c-star"},{k:"company",t:"Company",f:1,cls:"c-co"},{k:"role",t:"Role",f:1},{k:"jd",t:"JD",f:1},{k:"track",t:"Track",f:1},{k:"type",t:"Type",f:1},
+ {k:"applied",t:"Applied",f:1},{k:"status",t:"Status",f:1},{k:"updated",t:"Last update",f:1},{k:"next",t:"Next step",f:1},{k:"notes",t:"Notes",f:1},{k:"source",t:"Via",f:1},{k:"_x",t:""}];
+const MONTHLY=new Set(["applied","updated"]);
+const FREE=new Set(["role","next","notes","jd"]);
+const fval=(r,k)=>{const v=r[k]??""; if(MONTHLY.has(k))return v?v.slice(0,7):"(no date)"; if(FREE.has(k))return v?"Has text":"(empty)"; return v===""?"(empty)":String(v)};
+
+let rows=[]; let db=null; let col=null; let canWrite=true;
+let sort={k:"applied",dir:"desc"}; const colFilters={}; COLS.forEach(c=>{if(c.f)colFilters[c.k]=new Set()}); const statusFilter=colFilters.status;
+const $=id=>document.getElementById(id);
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const daysSince=d=>d?Math.floor((Date.now()-new Date(d+"T12:00:00").getTime())/864e5):null;
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1800)}
+function setSync(state,txt){$("dot").className="dot "+state;$("syncTxt").textContent=txt}
+
+TRACKS.forEach(t=>{const o=document.createElement("option");o.textContent=t;$("fTrack").appendChild(o)});
+
+function filtered(){
+  const q=$("q").value.trim().toLowerCase(),ty=$("fType").value,tr=$("fTrack").value,st=$("fStar").checked,hr=$("fHideRej").checked;
+  return rows.filter(r=>{
+    for(const k in colFilters){const s=colFilters[k]; if(s.size&&!s.has(fval(r,k)))return false}
+    if(ty&&r.type!==ty)return false; if(tr&&r.track!==tr)return false; if(st&&!r.starred)return false;
+    if(hr&&DEAD.has(r.status))return false;
+    if(q&&!(`${r.company} ${r.role} ${r.notes} ${r.next} ${r.source}`.toLowerCase().includes(q)))return false;
+    return true;
+  }).sort((a,b)=>{
+    let x=a[sort.k]??"",y=b[sort.k]??""; if(sort.k==="starred"){x=a.starred?1:0;y=b.starred?1:0}
+    if(sort.k==="status"){x=STATUSES.findIndex(s=>s.k===a.status);y=STATUSES.findIndex(s=>s.k===b.status)}
+    if(x===""&&y!=="")return 1; if(y===""&&x!=="")return -1;
+    const r=x<y?-1:x>y?1:0; return sort.dir==="asc"?r:-r;
+  });
+}
+
+function renderStats(){
+  const n=rows.length, open=rows.filter(r=>r.status==="Applied").length, proc=rows.filter(r=>PROC.has(r.status)).length, dead=rows.filter(r=>DEAD.has(r.status)).length;
+  $("kTotal").textContent=n; $("kOpen").textContent=open; $("kProc").textContent=proc; $("kRej").textContent=dead;
+  const companies=new Set(rows.map(r=>r.company)).size; $("kTotalH").textContent=companies+" companies";
+  $("kResp").textContent=n?Math.round((n-open)/n*100)+"%":"–";
+  $("kRejH").textContent=n?Math.round(dead/n*100)+"% of total":"";
+  // pipeline
+  const cnt={}; rows.forEach(r=>cnt[r.status]=(cnt[r.status]||0)+1);
+  const pipe=$("pipe"),leg=$("legend"); pipe.innerHTML="";leg.innerHTML="";
+  STATUSES.filter(s=>cnt[s.k]).forEach(s=>{
+    const sp=document.createElement("span"); sp.style.width=(cnt[s.k]/n*100)+"%"; sp.style.background=`var(--s-${s.c})`;
+    sp.title=`${s.k}: ${cnt[s.k]}`; sp.onclick=()=>{toggleStatus(s.k)}; pipe.appendChild(sp);
+    leg.insertAdjacentHTML("beforeend",`<span><i style="background:var(--s-${s.c})"></i>${s.k}<b>${cnt[s.k]}</b></span>`);
+  });
+  // weeks
+  const wk=d=>{const x=new Date(d+"T12:00:00");x.setDate(x.getDate()-((x.getDay()+6)%7));return x.toISOString().slice(0,10)};
+  const by={}; rows.filter(r=>r.applied).forEach(r=>{const k=wk(r.applied);by[k]=(by[k]||0)+1});
+  const keys=Object.keys(by).sort(); const W=$("weeks"); W.innerHTML="";
+  if(keys.length){
+    const all=[];let c=new Date(keys[0]+"T12:00:00");const end=new Date(wk(today())+"T12:00:00");
+    while(c<=end){all.push(c.toISOString().slice(0,10));c.setDate(c.getDate()+7)}
+    const mx=Math.max(...all.map(k=>by[k]||0));
+    all.forEach(k=>W.insertAdjacentHTML("beforeend",`<div class="b" style="height:${(by[k]||0)/mx*100}%" data-t="Week of ${k.slice(5)}: ${by[k]||0}"></div>`));
+    $("wl").innerHTML=`<span>${all[0].slice(5)}</span><span>${all[all.length-1].slice(5)}</span>`;
+  }
+  // chips
+  const ch=$("chips"); ch.innerHTML="";
+  STATUSES.filter(s=>cnt[s.k]).forEach(s=>{const e=document.createElement("span");e.className="chip"+(statusFilter.has(s.k)?" on":"");e.innerHTML=`${s.k}<span class="n">${cnt[s.k]}</span>`;e.onclick=()=>toggleStatus(s.k);ch.appendChild(e)});
+  const nAct=Object.values(colFilters).reduce((a,s)=>a+(s.size?1:0),0); if(nAct){const e=document.createElement("span");e.className="chip";e.textContent=`Clear all filters (${nAct}) ✕`;e.onclick=()=>{Object.values(colFilters).forEach(s=>s.clear());render()};ch.appendChild(e)}
+}
+function toggleStatus(k){statusFilter.has(k)?statusFilter.delete(k):statusFilter.add(k);render()}
+
+function opts(list,cur){return list.map(v=>`<option${v===cur?" selected":""}>${esc(v)}</option>`).join("")}
+function renderTable(){
+  $("thead").innerHTML=COLS.map(c=>`<th data-k="${c.k}" class="${c.cls||""} ${sort.k===c.k?"sorted":""}"><span class="th-l">${c.t}${sort.k===c.k?`<span class="ar">${sort.dir==="asc"?"↑":"↓"}</span>`:""}</span>${c.f?`<button class="fbtn${colFilters[c.k].size?" on":""}" data-fk="${c.k}" title="Filter">${colFilters[c.k].size?colFilters[c.k].size:"▾"}</button>`:""}</th>`).join("");
+  const list=filtered(); const tb=$("tbody");
+  $("empty").style.display=list.length?"none":"block";
+  $("empty").textContent=rows.length?"No applications match these filters.":"No applications yet — add one with “+ Add application”.";
+  const ro=canWrite?"":" disabled"; const ce=canWrite?' contenteditable="plaintext-only"':"";
+  tb.innerHTML=list.map(r=>{
+    const c=SCOLOR[r.status]||"applied"; const age=daysSince(r.updated||r.applied);
+    const stale=r.status==="Applied"&&daysSince(r.applied)>=21;
+    const mail=`https://mail.google.com/mail/?authuser=__GMAIL__#search/${encodeURIComponent(r.company.split(/[\s(/|]/)[0])}`;
+    return `<tr data-id="${r.id}" class="${DEAD.has(r.status)?"rej":""}">
+      <td class="c-star"><button class="star${r.starred?" on":""}" data-act="star"${ro}>★</button></td>
+      <td class="co"><span class="ed" data-f="company"${ce} data-ph="Company">${esc(r.company)}</span> <a class="mail" href="${mail}" target="_blank" rel="noopener" title="Find in Gmail">↗</a></td>
+      <td class="role"><span class="ed" data-f="role"${ce} data-ph="Role">${esc(r.role)}</span></td>
+      <td class="jdc">${/^https?:\/\//.test(r.jd||"")?`<a class="jdl" href="${esc(r.jd)}" target="_blank" rel="noopener">🔗 Open</a>`:`<a class="jdl find" href="https://www.google.com/search?q=${encodeURIComponent(r.company+" "+r.role.replace(/\(role not in email\)/,"")+" job description")}" target="_blank" rel="noopener">🔎 Find</a>`}<span class="ed jdv" data-f="jd"${ce} data-ph="paste link">${esc(r.jd||"")}</span></td>
+      <td><select class="mini" data-f="track"${ro}>${opts(TRACKS,r.track)}</select></td>
+      <td><select class="mini" data-f="type"${ro}>${opts(TYPES,r.type)}</select></td>
+      <td><input type="date" class="dt" data-f="applied" value="${esc(r.applied)}"${ro}></td>
+      <td><select class="pill" data-f="status" style="color:var(--s-${c});background-color:var(--s-${c}-bg)"${ro}>${opts(STATUSES.map(s=>s.k),r.status)}</select></td>
+      <td class="date">${esc(r.updated||"")}<div class="age${stale?" stale":""}">${age!=null?(stale?`${daysSince(r.applied)}d, no reply`:`${age}d ago`):""}</div></td>
+      <td style="min-width:180px"><span class="ed" data-f="next"${ce} data-ph="—">${esc(r.next)}</span></td>
+      <td style="min-width:200px"><span class="ed" data-f="notes"${ce} data-ph="—">${esc(r.notes)}</span></td>
+      <td style="white-space:nowrap;color:var(--ink2);font-size:12px"><span class="ed" data-f="source"${ce} data-ph="—">${esc(r.source)}</span></td>
+      <td><button class="del" data-act="del" title="Delete"${ro}>✕</button></td></tr>`}).join("");
+  $("countTxt").textContent=`Showing ${list.length} of ${rows.length}`;
+}
+function render(){renderStats();renderTable()}
+
+// ---- writes ----
+const pending=new Map();
+async function save(id,patch){
+  const r=rows.find(x=>x.id===id); if(!r)return; Object.assign(r,patch);
+  if(!col){toast("Not connected — change not saved");return}
+  const prev=pending.get(id)||Promise.resolve();
+  const p=prev.then(()=>col.doc(id).update(patch)).catch(e=>{toast("Save failed: "+(e&&e.code||"error"));if(e&&e.code==="invalid_argument"){canWrite=false;render()}});
+  pending.set(id,p); await p;
+}
+$("tbody").addEventListener("change",e=>{
+  const el=e.target, tr=el.closest("tr"); if(!tr||!el.dataset.f)return;
+  const id=tr.dataset.id, f=el.dataset.f, v=el.value; const patch={[f]:v};
+  if(f==="status"){patch.updated=today()}
+  save(id,patch).then(()=>{if(f==="status"||f==="track"||f==="type")render()});
+});
+$("tbody").addEventListener("focusout",e=>{
+  const el=e.target; if(!el.classList||!el.classList.contains("ed"))return;
+  const id=el.closest("tr").dataset.id, f=el.dataset.f, v=el.textContent.trim(); const r=rows.find(x=>x.id===id);
+  if(r&&r[f]!==v)save(id,{[f]:v}).then(()=>{if(f==="jd")renderTable()});
+});
+$("tbody").addEventListener("keydown",e=>{if(e.target.classList.contains("ed")&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();e.target.blur()}});
+$("tbody").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-act]"); if(!b)return; const id=b.closest("tr").dataset.id; const r=rows.find(x=>x.id===id);
+  if(b.dataset.act==="star"){save(id,{starred:!r.starred}).then(render);b.classList.toggle("on")}
+  if(b.dataset.act==="del"){
+    if(!b.classList.contains("confirm")){b.classList.add("confirm");b.textContent="Delete?";setTimeout(()=>{if(b.isConnected){b.classList.remove("confirm");b.textContent="✕"}},2500);return}
+    rows=rows.filter(x=>x.id!==id);render();
+    if(col)col.doc(id).delete().then(()=>toast("Deleted")).catch(()=>toast("Delete failed"));
+  }
+});
+$("thead").addEventListener("click",e=>{const fb=e.target.closest(".fbtn"); if(fb){e.stopPropagation();openPop(fb.dataset.fk,fb);return}
+  if(!e.target.closest(".th-l"))return; const th=e.target.closest("th");if(!th||th.dataset.k==="_x")return;const k=th.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:(k==="applied"||k==="updated"||k==="starred")?"desc":"asc"};renderTable()});
+["q","fType","fTrack","fStar","fHideRej"].forEach(id=>$(id).addEventListener("input",render));
+async function addRow(extra){
+  if(!col||!canWrite){toast("Can't add — not connected");return null}
+  const id="a"+Date.now().toString(36);
+  const r=Object.assign({id,company:"",role:"",jd:"",type:"Full-time",track:"PM/TPM",applied:today(),status:"Applied",updated:today(),next:"",notes:"",source:"",starred:false},extra||{});
+  rows.unshift(r); Object.values(colFilters).forEach(s=>s.clear()); $("q").value=""; sort={k:"applied",dir:"desc"}; render();
+  try{const {id:_,...body}=r; await col.doc(id).set(body)}catch(e){toast("Add failed: "+(e&&e.code||"error"))}
+  return id;
+}
+$("btnAdd").onclick=()=>{const p=$("addPanel");p.classList.toggle("open");if(p.classList.contains("open"))$("jdText").focus()};
+$("btnCancel").onclick=()=>{$("addPanel").classList.remove("open");$("jdText").value="";$("fillMsg").textContent=""};
+$("btnBlank").onclick=async()=>{$("addPanel").classList.remove("open");const id=await addRow();const c=id&&document.querySelector(`tr[data-id="${id}"] [data-f="company"]`);if(c)c.focus()};
+let sampleNs; let filling=false;
+$("btnFill").onclick=async()=>{
+  const txt=$("jdText").value.trim(); if(!txt){toast("Paste a JD first");return}
+  if(filling)return; filling=true; const b=$("btnFill"); b.disabled=true; b.textContent="✨ Reading JD…"; $("fillMsg").textContent="";
+  try{
+    if(sampleNs===undefined){try{sampleNs=await claude.use("sample")}catch{sampleNs=null}}
+    if(!sampleNs){$("fillMsg").textContent="Auto-fill isn't available in this view — use “Add blank row”.";return}
+    const prompt=`You extract structured data from a job posting for a personal job-application tracker.
+Return ONLY a JSON object with exactly these keys:
+- "company": employer name (string)
+- "role": job title exactly as posted, incl. team/term if shown (string)
+- "type": one of "Internship" | "Full-time" | "Program"  (co-op/intern → Internship)
+- "track": one of "PM/TPM" | "Strategy/Ops" | "Data/BA" | "FDE/Solutions" | "Design/Marketing" | "Engineering" | "Other"
+- "jd": the posting URL if one appears in the input, else ""
+- "location": city/remote/hybrid as posted, else ""
+- "keyreqs": the 3-5 most important requirements/keywords, written in your own words, max 30 words total
+- "deadline": application deadline as YYYY-MM-DD if stated, else ""
+If the input is only a URL, infer company/role from the URL as best you can and set keyreqs to "".
+Do not invent facts that are not in the input.
+
+JOB POSTING:
+"""${txt.slice(0,20000)}"""`;
+    const out=await sampleNs.json(prompt,{modelTier:"quick"});
+    const ok=v=>typeof v==="string"?v.trim():"";
+    const TYPES_=["Internship","Full-time","Program"];
+    const extra={company:ok(out.company),role:ok(out.role)||"(role not in JD)",type:TYPES_.includes(out.type)?out.type:"Full-time",
+      track:TRACKS.includes(out.track)?out.track:"Other",jd:/^https?:\/\//.test(ok(out.jd))?ok(out.jd):"",
+      notes:[ok(out.location)&&("📍 "+ok(out.location)),ok(out.keyreqs)&&("Key reqs: "+ok(out.keyreqs))].filter(Boolean).join(" · "),
+      next:ok(out.deadline)?("Apply by "+ok(out.deadline)):"",source:"Added from JD"};
+    if(!extra.company){$("fillMsg").textContent="Couldn't find a company name — check the paste or add a blank row.";return}
+    const id=await addRow(extra);
+    if(id){$("jdText").value="";$("addPanel").classList.remove("open");
+      setTimeout(()=>{const tr=document.querySelector(`tr[data-id="${id}"]`);if(tr){tr.classList.add("flash");tr.scrollIntoView({block:"center"})}},50);
+      toast(`Added ${extra.company} — ${extra.role}. Edit anything that looks off.`)}
+  }catch(e){
+    const c=e&&e.code; $("fillMsg").textContent=c==="rate_limited"?"Too many requests — try again in a minute.":c==="not_granted"?"Auto-fill wasn't allowed — use “Add blank row”.":"Couldn't read that JD ("+(c||"error")+"). Try pasting the text instead of a link.";
+  }finally{filling=false;b.disabled=false;b.textContent="✨ Auto-fill from JD"}
+};
+$("btnCsv").onclick=async()=>{
+  const keys=["company","role","jd","track","type","applied","status","updated","next","notes","source","starred"];
+  const csv=[keys.join(",")].concat(filtered().map(r=>keys.map(k=>`"${String(r[k]??"").replace(/"/g,'""')}"`).join(","))).join("\n");
+  try{await navigator.clipboard.writeText(csv);toast("CSV copied — paste into Sheets/Excel")}catch{toast("Clipboard blocked by browser")}
+};
+
+// ---- header filter popover ----
+const pop=document.createElement("div"); pop.className="pop"; document.body.appendChild(pop); let popKey=null;
+function openPop(k,btn){
+  if(popKey===k&&pop.style.display==="block"){closePop();return}
+  popKey=k; const sel=colFilters[k];
+  const cnt={}; rows.forEach(r=>{const v=fval(r,k);cnt[v]=(cnt[v]||0)+1});
+  let vals=Object.keys(cnt);
+  if(k==="status")vals.sort((a,b)=>STATUSES.findIndex(s=>s.k===a)-STATUSES.findIndex(s=>s.k===b));
+  else if(MONTHLY.has(k))vals.sort().reverse(); else vals.sort((a,b)=>a.localeCompare(b));
+  const label=v=>MONTHLY.has(k)&&v!=="(no date)"?new Date(v+"-15").toLocaleString("en-US",{month:"short",year:"numeric"}):v;
+  pop.innerHTML=`<div class="ps-sort"><button data-s="asc">Sort A→Z ↑</button><button data-s="desc">Sort Z→A ↓</button></div>
+   ${vals.length>8?'<input class="ps" placeholder="Search values…">':""}
+   <div class="pa"><button data-a="all">Select all</button><button data-a="none">Clear</button></div>
+   <div class="pl">${vals.map(v=>`<label data-v="${esc(v)}"><input type="checkbox" value="${esc(v)}"${sel.has(v)?" checked":""}> <span>${esc(label(v))}</span><span class="c">${cnt[v]}</span></label>`).join("")}</div>`;
+  const r=btn.getBoundingClientRect(); pop.style.display="block";
+  pop.style.top=(r.bottom+6)+"px"; pop.style.left=Math.max(8,Math.min(r.left-120,innerWidth-272))+"px";
+  const ps=pop.querySelector(".ps"); if(ps){ps.focus();ps.oninput=()=>{const q=ps.value.toLowerCase();pop.querySelectorAll("label").forEach(l=>l.style.display=l.dataset.v.toLowerCase().includes(q)?"":"none")}}
+}
+function closePop(){pop.style.display="none";popKey=null}
+pop.addEventListener("change",e=>{if(e.target.type!=="checkbox")return; const s=colFilters[popKey]; e.target.checked?s.add(e.target.value):s.delete(e.target.value); render()});
+pop.addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return; const s=colFilters[popKey];
+  if(b.dataset.s){sort={k:popKey,dir:b.dataset.s};renderTable();closePop();return}
+  if(b.dataset.a==="none"){s.clear()}
+  if(b.dataset.a==="all"){pop.querySelectorAll("label").forEach(l=>{if(l.style.display!=="none")s.add(l.dataset.v)})}
+  pop.querySelectorAll("input[type=checkbox]").forEach(c=>c.checked=s.has(c.value)); render();
+});
+document.addEventListener("mousedown",e=>{if(pop.style.display==="block"&&!pop.contains(e.target)&&!e.target.closest(".fbtn"))closePop()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closePop()});
+$("tablewrap")&&0;
+document.querySelector(".tablewrap").addEventListener("scroll",closePop);
+
+// ---- manual Gmail refresh (fires Claude's scheduled task) ----
+const TRIGGER="__TRIGGER_ID__"; const IDLE="↻ Update from Gmail";
+let mcpNs=null, requestedAt=null, syncTimer=null;
+function resetSyncBtn(){const b=$("btnSync");b.disabled=false;b.textContent=IDLE;clearTimeout(syncTimer)}
+const fmtTime=iso=>{try{return new Date(iso).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}catch{return iso}};
+$("btnSync").onclick=async()=>{
+  const b=$("btnSync"); if(b.disabled)return;
+  b.disabled=true; b.textContent="⏳ Starting…";
+  if(!mcpNs){try{mcpNs=await claude.use("mcp")}catch{mcpNs=null}}
+  if(!mcpNs){resetSyncBtn();toast("Can't start from this view — open on claude.ai, or ask Claude in chat to update");return}
+  try{
+    await mcpNs.callTool("Claude Code Remote","fire_trigger",{trigger_id:TRIGGER,text:"Manual refresh requested from the tracker page. Run now. Only message me if something changed or is due within 7 days."});
+    requestedAt=new Date().toISOString();
+    b.textContent="⏳ Updating… (~3–5 min)"; toast("Update started — rows change live as Claude finds emails");
+    syncTimer=setTimeout(resetSyncBtn,8*60*1000);
+  }catch(e){resetSyncBtn();toast("Couldn't start update: "+((e&&(e.code||e.message))||"error"))}
+};
+
+// ---- connect ----
+render();
+(async()=>{
+  const timer=setTimeout(()=>{setSync("warn","Can't reach data yet…")},10000);
+  try{ db=await claude.use("db"); }catch{ db=null }
+  if(!db){clearTimeout(timer);setSync("err","Offline");const b=$("banner");b.style.display="block";b.textContent="Data store unavailable in this view — open the tracker signed in on claude.ai to see and edit your applications.";return}
+  try{const u=await claude.use("user"); if(u&&u.can){const w=await u.can("data.write"); if(w===false)canWrite=false}}catch{}
+  col=db.collection("apps");
+  col.onSnapshot(snap=>{
+    if(!snap.metadata.fromCache){clearTimeout(timer);setSync("ok","Saved · live")}
+    const focused=document.activeElement&&document.activeElement.classList&&document.activeElement.classList.contains("ed");
+    rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!focused)render(); else renderStats();
+  },err=>{clearTimeout(timer);setSync("err","Sync error");toast("Sync error: "+(err&&err.code||""))});
+  db.doc("meta/status").onSnapshot(s=>{
+    if(!s.exists)return; const d=s.data()||{};
+    $("lastSync").textContent="Last Gmail sync: "+(d.lastRun?fmtTime(d.lastRun):"—")+(d.summary?" · "+d.summary:"");
+    if(requestedAt&&d.lastRun&&d.lastRun>requestedAt){requestedAt=null;resetSyncBtn();toast("Gmail update finished ✓")}
+  },()=>{});
+})();
+</script>
+</body>
+</html>
